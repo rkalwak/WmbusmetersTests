@@ -76,6 +76,7 @@ const char* toString(VIFCombinable v)
 
 std::string measurementTypeName(MeasurementType mt)
 {
+ #ifdef DEBUG_ENABLED
     switch (mt) {
     case MeasurementType::Any: return "any";
     case MeasurementType::Instantaneous: return "instantaneous";
@@ -84,6 +85,8 @@ std::string measurementTypeName(MeasurementType mt)
     case MeasurementType::AtError: return "aterror";
     case MeasurementType::Unknown: return "unknown";
     }
+#endif
+    return "?";
 }
 
 
@@ -213,6 +216,7 @@ string vifType(int vif)
 
     switch (vif)
     {
+ #ifdef DEBUG_ENABLEDs
     case 0x00: return "Energy mWh";
     case 0x01: return "Energy 10⁻² Wh";
     case 0x02: return "Energy 10⁻¹ Wh";
@@ -369,7 +373,7 @@ string vifType(int vif)
 
     case 0x7B1A: return "Relative humidity 0.1%";
     case 0x7B1B: return "Relative humidity 1%";
-
+#endif
     default: return "?";
     }
 }
@@ -549,8 +553,6 @@ string vif_7B_FirstExtensionType(uchar dif, uchar vif, uchar vife)
 
     return "?";
 }
-
-
 
 
 string vif_7D_SecondExtensionType(uchar dif, uchar vif, uchar vife)
@@ -831,6 +833,7 @@ string vif_7D_SecondExtensionType(uchar dif, uchar vif, uchar vife)
 
 string vifeType(int dif, int vif, int vife)
 {
+#ifdef DEBUG_ENABLED
     if (vif == 0xfb) { // 0x7b without high bit
         return vif_7B_FirstExtensionType(dif, vif, vife);
     }
@@ -1038,6 +1041,7 @@ string vifeType(int dif, int vif, int vife)
     if (vif == 0x7f) {
         return "manufacturer specific";
     }
+#endif
     return "?";
 }
 
@@ -1045,6 +1049,8 @@ string vifeType(int dif, int vif, int vife)
 string difType(int dif)
 {
     string s;
+
+#ifdef DEBUG_ENABLED
     int t = dif & 0x0f;
     switch (t) {
     case 0x0: s += "No data"; break;
@@ -1083,6 +1089,7 @@ string difType(int dif)
         // This is the lsb of the storage nr.
         s += " storagenr=1";
     }
+#endif
     return s;
 }
 
@@ -1090,12 +1097,12 @@ bool parseDV(Telegram* t,
     vector<uchar>& databytes,
     vector<uchar>::iterator data,
     size_t data_len,
-     std::map<string, pair<int, DVEntry>>* dv_entries,
+    std::map<string, pair<int, DVEntry>>* dv_entries,
     vector<uchar>::iterator* format,
     size_t format_len,
     uint16_t* format_hash)
 {
-     std::map<string, int> dv_count;
+    std::map<string, int> dv_count;
     vector<uchar> format_bytes;
     vector<uchar> id_bytes;
     vector<uchar> data_bytes;
@@ -2369,7 +2376,10 @@ double DVEntry::getCounter(DVEntryCounterType ct)
 
 string DVEntry::str()
 {
-    string s =
+    string s = "";
+
+#ifdef DEBUG_ENABLED
+    s =
         tostrprintf("%d: %s %s%s st=%d ta=%d su=%d",
             offset,
             dif_vif_key.str().c_str(),
@@ -2379,7 +2389,7 @@ string DVEntry::str()
             0,
             0
         );
-
+#endif
     return s;
 }
 
@@ -2543,36 +2553,11 @@ bool FieldMatcher::matches(DVEntry& dv_entry)
     return true;
 }
 
-const char* toString(MeasurementType mt)
-{
-    switch (mt)
-    {
-    case MeasurementType::Any: return "Any";
-    case MeasurementType::Instantaneous: return "Instantaneous";
-    case MeasurementType::Minimum: return "Minimum";
-    case MeasurementType::Maximum: return "Maximum";
-    case MeasurementType::AtError: return "AtError";
-    case MeasurementType::Unknown: return "Unknown";
-    }
-    return "?";
-}
-
-MeasurementType toMeasurementType(const char* s)
-{
-    if (!strcmp(s, "Any")) return MeasurementType::Any;
-    if (!strcmp(s, "Instantaneous")) return MeasurementType::Instantaneous;
-    if (!strcmp(s, "Minimum")) return MeasurementType::Minimum;
-    if (!strcmp(s, "Maximum")) return MeasurementType::Maximum;
-    if (!strcmp(s, "AtError")) return MeasurementType::AtError;
-    if (!strcmp(s, "Unknown")) return MeasurementType::Unknown;
-
-    return MeasurementType::Unknown;
-}
-
 string FieldMatcher::str()
 {
     string s = "";
 
+#ifdef DEBUG_ENABLED
     if (match_dif_vif_key)
     {
         s = s + "DVK(" + dif_vif_key.str() + ") ";
@@ -2630,7 +2615,7 @@ string FieldMatcher::str()
     {
         s.pop_back();
     }
-
+#endif
     return s;
 }
 
@@ -2644,6 +2629,7 @@ DVEntryCounterType toDVEntryCounterType(const std::string& s)
 
 const char* toString(DVEntryCounterType ct)
 {
+#ifdef DEBUG_ENABLED
     switch (ct)
     {
     case DVEntryCounterType::UNKNOWN: return "unknown";
@@ -2651,8 +2637,8 @@ const char* toString(DVEntryCounterType ct)
     case DVEntryCounterType::TARIFF_COUNTER: return "tariff_counter";
     case DVEntryCounterType::SUBUNIT_COUNTER: return "subunit_counter";
     }
-
-    return "unknown";
+#endif
+    return "?";
 }
 
 string available_vif_ranges_;

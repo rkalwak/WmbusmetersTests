@@ -211,8 +211,6 @@ public:
     // Mapped from their key for quick access to their offset and content.
     std::map<std::string, std::pair<int, DVEntry>> dv_entries;
 
-    std::string autoDetectPossibleDrivers();
-
     // part of original telegram bytes, only filled if pre-processing modifies it
     std::vector<uchar> original;
 
@@ -272,9 +270,6 @@ std::string cType(int c_field);
 bool isValidWMBusCField(int c_field);
 bool isValidMBusCField(int c_field);
 std::string ccType(int cc_field);
-
-std::string vifKey(int vif); // E.g. temperature energy power mass_flow volume_flow
-std::string vifUnit(int vif); // E.g. m3 c kwh kw MJ MJh
 
 bool isCloseEnough(int media1, int media2);
 LinkModeInfo* getLinkModeInfo(LinkMode lm);

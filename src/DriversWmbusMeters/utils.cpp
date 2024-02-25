@@ -220,24 +220,29 @@ std::string safeString(std::vector<uchar>& target) {
     return str;
 }
 
-void warning(const char* fmt, ...) {
+void debug(const char* fmt, ...) {
+    if(isDebugEnabled())
+ {
     Serial.println(fmt);
+ }
+}
+
+void warning(const char* fmt, ...) {
+ debug(fmt);
 }
 
 void error(const char* fmt, ...) {
- Serial.println(fmt);
+ debug(fmt);
 }
 
-void debug(const char* fmt, ...) {
- Serial.println(fmt);
-}
+
 
 void verbose(const char* fmt, ...) {
- Serial.println(fmt);
+ debug(fmt);
 }
 
 void trace(const char* fmt, ...) {
- Serial.println(fmt);
+  debug(fmt);
 }
 
 
@@ -377,7 +382,11 @@ bool isTraceEnabled() {
 
 bool isDebugEnabled()
 {
+    #ifdef DEBUG_ENABLED
     return true;
+    #else
+    return false;
+    #endif
 }
 
 bool isVerboseEnabled() { return true; }

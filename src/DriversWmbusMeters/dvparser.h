@@ -30,8 +30,8 @@
 #include<vector>
 #include "types.h"
 #include "Telegram.h"
-#define DEBUG_PARSER(...) fprintf(stdout, __VA_ARGS__)
-
+//#define DEBUG_PARSER(...) if(isDebugEnabled) {fprintf(stdout, __VA_ARGS__);}
+#define DEBUG_PARSER(...)
 const char* toString(VIFRange v);
 VIFRange toVIFRange(const char* s);
 Unit toDefaultUnit(VIFRange v);

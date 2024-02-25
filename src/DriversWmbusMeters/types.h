@@ -423,8 +423,6 @@ enum class MeasurementType
     Unknown
 };
 
-const char* toString(MeasurementType mt);
-MeasurementType toMeasurementType(const char* s);
 MeasurementType difMeasurementType(int dif);
 std::string measurementTypeName(MeasurementType mt);
 
