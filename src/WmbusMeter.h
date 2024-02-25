@@ -17,7 +17,7 @@ class WmbusMeter {
   std::map<std::string, SensorBase *> sensors_{};
   void add_sensor(SensorBase *sensor);
   float parse_frame(std::vector<unsigned char> &frame);
-
+ ~WmbusMeter();
  private:
   float lastReadValue = 0.0;
   int packetLength = 192;

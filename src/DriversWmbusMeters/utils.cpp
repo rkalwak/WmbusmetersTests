@@ -281,14 +281,6 @@ std::vector<std::string> splitString(const std::string& s, char c)
 
 bool parseExtras(const std::string& s, std::map<std::string, std::string>* extras)
 {
-    std::vector<std::string> parts = splitString(s, ' ');
-
-    for (auto& p : parts)
-    {
-        std::vector<std::string> kv = splitString(p, '=');
-        if (kv.size() != 2) return false;
-        (*extras)[kv[0]] = kv[1];
-    }
     return true;
 }
 

@@ -27,6 +27,8 @@ uint16_t packetSize1 (uint8_t lField)
   return (nrBytes);
 }
 SET_LOOP_TASK_STACK_SIZE(16*1024);
+
+//#define DEBUG_ENABLED false
 void setup() {
   Serial.begin(115200);
   Serial.println("wMBus-lib: TESTS:");
@@ -42,6 +44,7 @@ meter1->add_sensor(new SensorBase("004444DD", "apator08", "total", "",Unit::M3))
 float val1 = meter1->parse_frame(frame1);
  Serial.print("value: ");
  Serial.println(val1); // 871.57m3
+  delete meter1;
    memory= ESP.getFreeHeap() / 1024.0;
   Serial.print("Memory:");
   Serial.println(memory);
@@ -55,6 +58,7 @@ meter2->add_sensor(new SensorBase("20202020", "apator162", "total", "",Unit::M3)
 float val2 = meter2->parse_frame(frame2);
  Serial.print("value: ");
  Serial.println(val2); // 3.84
+  delete meter2;
   Serial.println("Apator16-2 END");
  memory= ESP.getFreeHeap() / 1024.0;
   Serial.print("Memory:");
@@ -69,6 +73,7 @@ meter3->add_sensor(new SensorBase("12345699", "iperl", "total", "",Unit::M3));
 float val3 = meter3->parse_frame(frame3);
  Serial.print("value: ");
  Serial.println(val3); //  7.70m3
+  delete meter3;
   Serial.println("Iperl END");
  memory= ESP.getFreeHeap() / 1024.0;
   Serial.print("Memory:");
@@ -84,11 +89,13 @@ meter4->add_sensor(new SensorBase("02713582", "mkradio4", "total", "",Unit::M3))
 float val4 = meter4->parse_frame(frame4);
  Serial.print("value: ");
  Serial.println(val4);
-
+ delete meter4;
   Serial.println("mkradio4 END");
  memory= ESP.getFreeHeap() / 1024.0;
   Serial.print("Memory:");
   Serial.println(memory);
+
+
 
    Serial.println("izar");
  // https://wmbusmeters.org/analyze/19442423860775035048A251520015BEB6B2E1ED623A18FC74A5
@@ -99,23 +106,40 @@ meter5->add_sensor(new SensorBase("48500375", "izar", "total", "",Unit::M3));
 float val5 = meter5->parse_frame(frame5);
  Serial.print("value: ");
  Serial.println(val5); //521.602
-
+   delete meter5;
   Serial.println("izar END");
  memory= ESP.getFreeHeap() / 1024.0;
   Serial.print("Memory:");
   Serial.println(memory);
+
+
 
    Serial.println("amiplus");
  // https://wmbusmeters.org/analyze/4E4401061010101002027A000040052F2F0E035040691500000B2B300300066D00790C7423400C78371204860BABC8FC100000000E833C8074000000000BAB3C0000000AFDC9FC0136022F2F2F2F2F
 uint8_t packet6[254] = {0x4E,0x44,0x01,0x06,0x10,0x10,0x10,0x10,0x02,0x02,0x7A,0x00,0x00,0x40,0x05,0x2F,0x2F,0x0E,0x03,0x50,0x40,0x69,0x15,0x00,0x00,0x0B,0x2B,0x30,0x03,0x00,0x06,0x6D,0x00,0x79,0x0C,0x74,0x23,0x40,0x0C,0x78,0x37,0x12,0x04,0x86,0x0B,0xAB,0xC8,0xFC,0x10,0x00,0x00,0x00,0x0E,0x83,0x3C,0x80,0x74,0x00,0x00,0x00,0x00,0x0B,0xAB,0x3C,0x00,0x00,0x00,0x0A,0xFD,0xC9,0xFC,0x01,0x36,0x02,0x2F,0x2F,0x2F,0x2F,0x2F,};
 std::vector<unsigned char> frame6(packet6, packet6 + packetSize1(packet6[0]));
 WmbusMeter* meter6 = new WmbusMeter();
-meter6->add_sensor(new SensorBase("10101010", "amiplus", "current_power_consumption", "", Unit::KWH));
+meter6->add_sensor(new SensorBase("10101010", "amiplus", "current_power_consumption", "", Unit::KW));
 float val6 = meter6->parse_frame(frame6);
  Serial.print("value: ");
- Serial.println(val6); //0.33
-
+ Serial.println(val6); //15694.05m3
+   delete meter6;
   Serial.println("amiplus END");
+ memory= ESP.getFreeHeap() / 1024.0;
+  Serial.print("Memory:");
+  Serial.println(memory);
+
+     Serial.println("amiplus2");
+ // https://wmbusmeters.org/analyze/4E4401061010101002027A000040052F2F0E035040691500000B2B300300066D00790C7423400C78371204860BABC8FC100000000E833C8074000000000BAB3C0000000AFDC9FC0136022F2F2F2F2F
+uint8_t packet7[254] = {0x4E,0x44,0x01,0x06,0x10,0x10,0x10,0x10,0x02,0x02,0x7A,0x00,0x00,0x40,0x05,0x2F,0x2F,0x0E,0x03,0x50,0x40,0x69,0x15,0x00,0x00,0x0B,0x2B,0x30,0x03,0x00,0x06,0x6D,0x00,0x79,0x0C,0x74,0x23,0x40,0x0C,0x78,0x37,0x12,0x04,0x86,0x0B,0xAB,0xC8,0xFC,0x10,0x00,0x00,0x00,0x0E,0x83,0x3C,0x80,0x74,0x00,0x00,0x00,0x00,0x0B,0xAB,0x3C,0x00,0x00,0x00,0x0A,0xFD,0xC9,0xFC,0x01,0x36,0x02,0x2F,0x2F,0x2F,0x2F,0x2F,};
+std::vector<unsigned char> frame7(packet7, packet7 + packetSize1(packet7[0]));
+WmbusMeter* meter7 = new WmbusMeter();
+meter7->add_sensor(new SensorBase("10101010", "amiplus", "current_power_consumption", "", Unit::KW));
+float val7 = meter7->parse_frame(frame7);
+ Serial.print("value: ");
+ Serial.println(val7); //15694.05m3
+   delete meter7;
+  Serial.println("amiplus2 END");
  memory= ESP.getFreeHeap() / 1024.0;
   Serial.print("Memory:");
   Serial.println(memory);

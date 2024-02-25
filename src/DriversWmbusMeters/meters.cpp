@@ -1243,149 +1243,43 @@ bool lookupDriverInfo(const string& driver_name, DriverInfo* out_di)
     return true;
 }
 
-bool is_driver_and_extras(const string& t, DriverName* out_driver_name, string* out_extras)
+bool is_driver_and_extras(const string &t, DriverName *out_driver_name)
 {
-    // piigth(jump=foo)
-    // multical21
     DriverInfo di;
-    size_t ps = t.find('(');
-    size_t pe = t.find(')');
-
-    size_t te = 0; // Position after type end.
-
-    bool found_parentheses = (ps != string::npos && pe != string::npos);
-
-    if (!found_parentheses)
-    {
-        if (lookupDriverInfo(t, &di))
-        {
-            *out_driver_name = di.name();
-            // We found a registered driver.
-            *out_extras = "";
-            return true;
-        }
-        *out_extras = "";
-        return true;
-    }
-Serial.println("wMBus-lib: parse 413");
-    // Parentheses must be last.
-    if (!(ps > 0 && ps < pe && pe == t.length() - 1)) return false;
-    te = ps;
-
-    string type = t.substr(0, te);
-Serial.println("wMBus-lib: parse 414");
-    bool found = lookupDriverInfo(type, &di);
-
-    if (found)
+    if (lookupDriverInfo(t, &di))
     {
         *out_driver_name = di.name();
+        // We found a registered driver.
+        return true;
     }
 
-    string extras = t.substr(ps + 1, pe - ps - 1);
-    *out_extras = extras;
-
-    return true;
-}
-
-bool isValidLinkModes(string m)
-{
-    LinkModeSet lms;
-    char buf[50];
-    strcpy(buf, m.c_str());
-    char* saveptr{};
-    const char* tok = strtok_r(buf, ",", &saveptr);
-    while (tok != NULL)
-    {
-        LinkMode lm = toLinkMode(tok);
-        if (lm == LinkMode::UNKNOWN)
-        {
-            return false;
-        }
-        lms.addLinkMode(lm);
-        tok = strtok_r(NULL, ",", &saveptr);
-    }
-    return true;
-}
-
-
-bool isValidBps(const string& b)
-{
-    if (b == "300") return true;
-    if (b == "600") return true;
-    if (b == "1200") return true;
-    if (b == "2400") return true;
-    if (b == "4800") return true;
-    if (b == "9600") return true;
-    if (b == "14400") return true;
-    if (b == "19200") return true;
-    if (b == "38400") return true;
-    if (b == "57600") return true;
-    if (b == "115200") return true;
     return false;
 }
 
-bool MeterInfo::parse(string n, string d, string i, string k)
+bool MeterInfo::parse(string name_, string driver_, string ids_, string key_)
 {
     clear();
     Serial.println("wMBus-lib: parse 0.");
-    name = n;
-    ids = splitMatchExpressions(i);
-    key = k;
-    bool driverextras_checked = false;
+    name = name_;
+    ids = splitMatchExpressions(ids_);
+    key = key_;
     bool bus_checked = false;
     bool bps_checked = false;
     bool link_modes_checked = false;
-    // The : colon is forbidden inside the parts.
-    vector<string> parts = splitString(d, ':');
-    // Example piigth:MAIN:2400 // it is an mbus meter.
-    //         c5isf:MAIN:2400:mbus // attached to mbus instead of t1
-    //         multical21:c1
-    //         telco:BUS2:c2
-    // driver ( extras ) : bus_alias : bps : linkmodes
-    for (auto& p : parts)
+
+    if (!is_driver_and_extras(driver_, &driver_name))
     {
-        if (!driverextras_checked && is_driver_and_extras(p, &driver_name, &extras))
-        { Serial.println("wMBus-lib: parse 4.1");
-            driverextras_checked = true;
-        }
-        else if (!bus_checked && isValidAlias(p) && !isValidBps(p) && !isValidLinkModes(p))
-        {
-            Serial.println("wMBus-lib: parse 5");
-            driverextras_checked = true;
-            bus_checked = true;
-        }
-        else if (!bps_checked && isValidBps(p) && !isValidLinkModes(p))
-        {
-            Serial.println("wMBus-lib: parse 6");
-            driverextras_checked = true;
-            bus_checked = true;
-            bps_checked = true;
-            bps = atoi(p.c_str());
-        }
-        else if (!link_modes_checked && isValidLinkModes(p))
-        {
-            Serial.println("wMBus-lib: parse 7");
-            driverextras_checked = true;
-            bus_checked = true;
-            bps_checked = true;
-            link_modes_checked = true;
-            link_modes = parseLinkModes(p);
-        }
-        else
-        {
-            // Unknown part....
-            return false;
-        }
+        return false;
     }
 
     return true;
 }
 
-
+// returns empty string
 string FieldInfo::renderJson(Meter* m, DVEntry* dve)
 {
-    string s;
-
+    string s="";
+/*
     string display_unit_s = unitToStringLowerCase(displayUnit());
     string field_name = generateFieldNameNoUnit(dve);
 
@@ -1427,7 +1321,7 @@ string FieldInfo::renderJson(Meter* m, DVEntry* dve)
             s += "\"" + field_name + "_" + display_unit_s + "\":" + valueToString(m->getNumericValue(field_name, displayUnit()), displayUnit());
         }
     }
-
+*/
     return s;
 }
 
@@ -1564,15 +1458,9 @@ Serial.println("Driver found");
         {
             newm->addExtraCalculatedField(j);
         }
-      
-        if (mi->selected_fields.size() > 0)
-        {
-            newm->setSelectedFields(mi->selected_fields);
-        }
-        else
-        {
-            newm->setSelectedFields(di->defaultFields());
-        }
+        
+        newm->setSelectedFields(di->defaultFields());
+
         verbose("(meter) created %s %s %s %s\n",
             mi->name.c_str(),
             di->name().str().c_str(),
@@ -1583,24 +1471,6 @@ Serial.println("Driver found");
 
     return newm;
 }
-
-/*
-string MeterInfo::str()
-{
-    string r;
-    r += driver_name.str();
-    if (extras != "")
-    {
-        r += "(" + extras + ")";
-    }
-    r += ":";
-    if (bps != 0) r += bps + ":";
-    if (!link_modes.empty()) r += link_modes.hr() + ":";
-    if (r.size() > 0) r.pop_back();
-
-    return r;
-}
-*/
 
 bool isValidKey(const string& key, MeterInfo& mi)
 {

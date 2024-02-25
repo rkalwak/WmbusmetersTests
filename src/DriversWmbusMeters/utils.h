@@ -124,7 +124,6 @@ std::string vif_6F_ThirdExtensionType(uchar dif, uchar vif, uchar vife);
 std::string vif_7F_ManufacturerExtensionType(uchar dif, uchar vif, uchar vife);
 LinkModeSet parseLinkModes(std::string m);
 bool isValidAlias(const std::string& alias);
-bool isValidBps(const std::string& b);
 uchar bcd2bin(uchar c);
 std::string currentYear();
 std::string currentDay();

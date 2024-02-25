@@ -19,6 +19,10 @@ class SensorBase {
      Serial.println(type.c_str());
   };
 
+  ~SensorBase(){
+    _key.clear();
+  }
+
   std::string get_type() {
     return this->_type;
   };

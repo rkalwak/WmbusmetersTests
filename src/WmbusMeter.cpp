@@ -1,6 +1,12 @@
 #include "WmbusMeter.h"
 #include <string>
 #include "DriversWmbusMeters/meters.h"
+
+WmbusMeter::~WmbusMeter(){
+  for (const auto& kv : this->sensors_) {
+    delete kv.second;
+  }
+}
 WmbusMeter::WmbusMeter(uint8_t mosi, uint8_t miso, uint8_t clk, uint8_t cs, uint8_t gdo0, uint8_t gdo2)
 {
   Serial.print("wMBus-lib: Initializing with GPIO: ");

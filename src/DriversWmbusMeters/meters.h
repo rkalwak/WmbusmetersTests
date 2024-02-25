@@ -58,59 +58,35 @@ using namespace std;
 
 typedef unsigned char uchar;
 
-struct Address
-{
-    // Example address: 12345678
-    // Or fully qualified: 12345678.M=PII.T=1b.V=01
-    // which means manufacturer triplet PII, type/media=0x1b, version=0x01
-    std::string id;
-    bool wildcard_used{}; // The id contains a *
-    bool mbus_primary{}; // Signals that the id is 0-250
-    uint16_t mfct{};
-    uchar type{};
-    uchar version{};
-
-    bool parse(std::string& s);
-};
-
 struct MeterInfo
 {
     // A bus can be an mbus or a wmbus dongle.
     // The bus can be the empty string, which means that it will fallback to the first defined bus.
     std::string name; // User specified name of this (group of) meters.
     DriverName driver_name; // Will replace MeterDriver.
-    std::string extras; // Extra driver specific settings.
+    std::string extras; // KEEP IT AS HAS DEPENDENCY! Extra driver specific settings.
     vector<std::string> ids; // Match expressions for ids.
     std::string idsc; // Comma separated ids.
     std::string key;  // Decryption key.
     LinkModeSet link_modes;
-    int bps{};     // For mbus communication you need to know the baud rate.
-    vector<std::string> shells;
-    vector<std::string> meter_shells;
     vector<std::string> extra_constant_fields; // Additional static fields that are added to each message.
     vector<std::string> extra_calculated_fields; // Additional field calculated using formulas.
-    vector<std::string> selected_fields; // Usually set to the default fields, but can be override in meter config.
 
     MeterInfo()
     {
     }
 
-    //string str();
     DriverName driverName();
 
     MeterInfo(string b, string n, string e, vector<string> i, string k, LinkModeSet lms, int baud, vector<string>& s, vector<string>& ms, vector<string>& j, vector<string>& calcfs)
     {
         name = n;
-        extras = e,
-            ids = i;
+        ids = i;
         idsc = toIdsCommaSeparated(ids);
         key = k;
-        shells = s;
-        meter_shells = ms;
         extra_constant_fields = j;
         extra_calculated_fields = calcfs;
         link_modes = lms;
-        bps = baud;
     }
 
     void clear()
@@ -119,12 +95,9 @@ struct MeterInfo
         ids.clear();
         idsc = "";
         key = "";
-        shells.clear();
-        meter_shells.clear();
         extra_constant_fields.clear();
         extra_calculated_fields.clear();
         link_modes.clear();
-        bps = 0;
     }
 
     bool parse(string name, string driver, string id, string key);
@@ -376,9 +349,6 @@ shared_ptr<Meter> createMeter(MeterInfo* mi);
 const char* availableMeterTypes();
 string decodeTPLStatusByteWithMfct(uchar sts, Translate::Lookup& lookup);
 bool lookupDriverInfo(const string& driver_name, DriverInfo* out_di);
-bool isValidLinkModes(string modes);
-
-
 
 
 #endif
