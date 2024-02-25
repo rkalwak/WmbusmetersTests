@@ -44,12 +44,6 @@ private:
 
 // Return a list of matching drivers, like: multical21
 void detectMeterDrivers(int manufacturer, int media, int version, std::vector<std::string>* drivers);
-// When entering the driver, check that the telegram is indeed known to be
-// compatible with the driver(type), if not then print a warning.
-bool isMeterDriverValid(DriverName driver_name, int manufacturer, int media, int version);
-// For an unknown telegram, when analyzing check if the media type is reasonable in relation to the driver.
-// Ie. do not try to decode a door sensor telegram with a water meter driver.
-bool isMeterDriverReasonableForMedia(std::string driver_name, int media);
 
 struct MeterInfo;
 bool isValidKey(const std::string& key, MeterInfo& mt);
@@ -69,8 +63,6 @@ struct MeterInfo
     std::string idsc; // Comma separated ids.
     std::string key;  // Decryption key.
     LinkModeSet link_modes;
-    vector<std::string> extra_constant_fields; // Additional static fields that are added to each message.
-    vector<std::string> extra_calculated_fields; // Additional field calculated using formulas.
 
     MeterInfo()
     {
@@ -84,8 +76,6 @@ struct MeterInfo
         ids = i;
         idsc = toIdsCommaSeparated(ids);
         key = k;
-        extra_constant_fields = j;
-        extra_calculated_fields = calcfs;
         link_modes = lms;
     }
 
@@ -95,8 +85,6 @@ struct MeterInfo
         ids.clear();
         idsc = "";
         key = "";
-        extra_constant_fields.clear();
-        extra_calculated_fields.clear();
         link_modes.clear();
     }
 
@@ -159,17 +147,11 @@ public:
     Translate::Lookup& mfctTPLStatusBits() { return mfct_tpl_status_bits_; }
     shared_ptr<Meter> construct(MeterInfo& mi) { return constructor_(mi, *this); }
     bool detect(uint16_t mfct, uchar type, uchar version);
-    bool isValidMedia(uchar type);
-    bool isCloseEnoughMedia(uchar type);
     int forceMfctIndex() { return force_mfct_index_; }
     bool hasProcessContent() { return has_process_content_; }
 };
 
 bool registerDriver(function<void(DriverInfo& di)> setup);
-// Return the best driver match for a telegram.
-DriverInfo pickMeterDriver(Telegram* t);
-
-
 vector<DriverInfo*>& allDrivers();
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -300,7 +282,6 @@ struct Meter
     virtual string idsc() = 0;
     // This meter can report these fields, like total_m3, temp_c.
     virtual vector<FieldInfo>& fieldInfos() = 0;
-    virtual vector<string>& extraConstantFields() = 0;
     // Either the default fields specified in the driver, or override fields in the meter configuration file.
     virtual vector<string>& selectedFields() = 0;
     virtual void setSelectedFields(vector<string>& f) = 0;
@@ -327,8 +308,6 @@ struct Meter
         bool simulated, string* id, bool* id_match, Telegram* out_t = NULL) = 0;
     virtual MeterKeys* meterKeys() = 0;
 
-    virtual void addExtraCalculatedField(std::string ecf) = 0;
-
     virtual FieldInfo* findFieldInfo(string vname, Quantity xuantity) = 0;
     virtual string renderJsonOnlyDefaultUnit(string vname, Quantity xuantity) = 0;
 
@@ -346,7 +325,6 @@ struct Configuration;
 struct MeterInfo;
 shared_ptr<Meter> createMeter(MeterInfo* mi);
 
-const char* availableMeterTypes();
 string decodeTPLStatusByteWithMfct(uchar sts, Translate::Lookup& lookup);
 bool lookupDriverInfo(const string& driver_name, DriverInfo* out_di);
 

@@ -42,15 +42,6 @@ void dumpHex(uint8_t* data, int len, bool newLine) {
     }
 }
 
-void dumpInt(uint8_t* data, int len, bool newLine)
-{
-    for (int i = 0; i < len; i++)
-    {
-      
-    }
-    
-}
-
 std::string str_snprintf(const char* fmt, size_t len, ...)
 {
     std::string str;

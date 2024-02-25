@@ -103,56 +103,6 @@ bool DriverInfo::detect(uint16_t mfct, uchar type, uchar version)
     return false;
 }
 
-bool DriverInfo::isValidMedia(uchar type)
-{
-    for (auto& dd : detect_)
-    {
-        if (dd.type == type) return true;
-    }
-    return false;
-}
-
-bool DriverInfo::isCloseEnoughMedia(uchar type)
-{
-    for (auto& dd : detect_)
-    {
-        if (isCloseEnough(dd.type, type)) return true;
-    }
-    return false;
-}
-
-bool forceRegisterDriver(function<void(DriverInfo&)> setup)
-{
-    DriverInfo di;
-    setup(di);
-
-    // Check that the driver name has not been registered before!
-    assert(lookupDriver(di.name().str()) == NULL);
-
-    // Check that no other driver also triggers on the same detection values.
-    for (auto& d : di.detect())
-    {
-        for (DriverInfo* p : allDrivers())
-        {
-            bool foo = p->detect(d.mfct, d.type, d.version);
-            if (foo)
-            {
-                error("Internal error: driver %s tried to register the same auto detect combo as driver %s alread has taken!\n",
-                    di.name().str().c_str(), p->name().str().c_str());
-            }
-        }
-    }
-
-    // Everything looks, good install this driver.
-    addRegisteredDriver(di);
-
-    // This code is invoked from the static initializers of DriverInfos when starting
-    // wmbusmeters. Thus we do not yet know if the user has supplied --debug or similar setting.
-    // To debug this you have to uncomment the printf below.
-    // fprintf(stderr, "(STATIC) added driver: %s\n", n.c_str());
-    return true;
-}
-
 bool registerDriver(function<void(DriverInfo&)> setup)
 {
      Serial.println("Trygin to register driver 2");
@@ -203,69 +153,8 @@ MeterCommonImplementation::MeterCommonImplementation(MeterInfo& mi,
         hex2bin(mi.key, &meter_keys_.confidentiality_key);
     }
 
-    for (auto j : mi.extra_constant_fields)
-    {
-        addExtraConstantField(j);
-    }
-
     link_modes_.unionLinkModeSet(di.linkModes());
     force_mfct_index_ = di.forceMfctIndex();
-}
-
-void MeterCommonImplementation::addExtraConstantField(string ecf)
-{
-    extra_constant_fields_.push_back(ecf);
-}
-
-void MeterCommonImplementation::addExtraCalculatedField(string ecf)
-{
-    verbose("(meter) Adding calculated field: %s\n", ecf.c_str());
-
-    vector<string> parts = splitString(ecf, '=');
-
-    if (parts.size() != 2)
-    {
-        warning("Invalid formula for calculated field. %s\n", ecf.c_str());
-        return;
-    }
-
-    string vname;
-    Unit unit;
-
-    bool ok = extractUnit(parts[0], &vname, &unit);
-    if (!ok)
-    {
-        warning("Could not extract a valid unit from calculated field name %s\n", parts[0].c_str());
-        return;
-    }
-
-    Quantity quantity = toQuantity(unit);
-
-    FieldInfo* existing = findFieldInfo(vname, quantity);
-    if (existing != NULL)
-    {
-        if (!canConvert(unit, existing->displayUnit()))
-        {
-            warning("Warning! Cannot add the calculated field: %s since it would conflict with the already declared field %s for quantity %s.\n",
-                parts[0].c_str(), vname.c_str(), toString(quantity));
-            return;
-        }
-    }
-
-    addNumericFieldWithCalculator(
-        vname,
-        "Calculated: " + ecf,
-        DEFAULT_PRINT_PROPERTIES,
-        quantity,
-        parts[1],
-        unit
-    );
-}
-
-
-vector<string>& MeterCommonImplementation::meterExtraConstantFields()
-{
-    return extra_constant_fields_;
 }
 
 DriverName MeterCommonImplementation::driverName()
@@ -508,11 +397,6 @@ string MeterCommonImplementation::idsc()
 vector<FieldInfo>& MeterCommonImplementation::fieldInfos()
 {
     return field_infos_;
-}
-
-vector<string>& MeterCommonImplementation::extraConstantFields()
-{
-    return extra_constant_fields_;
 }
 
 string MeterCommonImplementation::name()
@@ -1275,11 +1159,10 @@ bool MeterInfo::parse(string name_, string driver_, string ids_, string key_)
     return true;
 }
 
-// returns empty string
 string FieldInfo::renderJson(Meter* m, DVEntry* dve)
 {
     string s="";
-/*
+#ifdef DEBUG_ENABLED
     string display_unit_s = unitToStringLowerCase(displayUnit());
     string field_name = generateFieldNameNoUnit(dve);
 
@@ -1321,7 +1204,7 @@ string FieldInfo::renderJson(Meter* m, DVEntry* dve)
             s += "\"" + field_name + "_" + display_unit_s + "\":" + valueToString(m->getNumericValue(field_name, displayUnit()), displayUnit());
         }
     }
-*/
+#endif
     return s;
 }
 
@@ -1388,59 +1271,7 @@ void detectMeterDrivers(int manufacturer, int media, int version, vector<string>
     }
 }
 
-bool isMeterDriverValid(DriverName driver_name, int manufacturer, int media, int version)
-{
-    for (DriverInfo* p : allDrivers())
-    {
-        if (p->detect(manufacturer, media, version))
-        {
-            if (p->hasDriverName(driver_name)) return true;
-        }
-    }
-
-    return false;
-}
-
-bool isMeterDriverReasonableForMedia(string driver_name, int media)
-{
-    if (media == 0x37) return false;  // Skip converter meter side since they do not give any useful information.
-
-    for (DriverInfo* p : allDrivers())
-    {
-        if (p->name().str() == driver_name && p->isValidMedia(media))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 DriverInfo driver_unknown_;
-
-DriverInfo pickMeterDriver(Telegram* t)
-{
-    int manufacturer = t->dll_mfct;
-    int media = t->dll_type;
-    int version = t->dll_version;
-
-    if (t->tpl_id_found)
-    {
-        manufacturer = t->tpl_mfct;
-        media = t->tpl_type;
-        version = t->tpl_version;
-    }
-
-    for (DriverInfo* p : allDrivers())
-    {
-        if (p->detect(manufacturer, media, version))
-        {
-            return *p;
-        }
-    }
-
-    return driver_unknown_;
-}
 
 shared_ptr<Meter> createMeter(MeterInfo* mi)
 {
@@ -1454,10 +1285,6 @@ Serial.println("Driver found");
     if (di != NULL)
     {
         shared_ptr<Meter> newm = di->construct(*mi);
-        for (string& j : mi->extra_calculated_fields)
-        {
-            newm->addExtraCalculatedField(j);
-        }
         
         newm->setSelectedFields(di->defaultFields());
 
@@ -2279,21 +2106,4 @@ PrintProperties toPrintProperties(string s)
     }
 
     return bits;
-}
-
-char available_meter_types_[2048];
-
-const char* availableMeterTypes()
-{
-    if (available_meter_types_[0]) return available_meter_types_;
-
-#define X(m) if (MeterType::m != MeterType::AutoMeter && MeterType::m != MeterType::UnknownMeter) {  \
-        strcat(available_meter_types_, #m); strcat(available_meter_types_, "\n"); \
-        assert(strlen(available_meter_types_) < 1024); }
-    LIST_OF_METER_TYPES
-#undef X
-
-        // Remove last ,
-        available_meter_types_[strlen(available_meter_types_) - 1] = 0;
-    return available_meter_types_;
 }

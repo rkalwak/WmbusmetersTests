@@ -13,7 +13,6 @@
 //  Function Declareration
 //----------------------------------------------------------------------------------
 void dumpHex(uint8_t* data, int len, bool newLine = true);
-void dumpInt(uint8_t* data, int len, bool newLine = true);
 unsigned char* safeButUnsafeVectorPtr(std::vector<unsigned char>& v);
 std::string str_snprintf(const char* fmt, size_t len, ...);
 //std::string to_string(int value);

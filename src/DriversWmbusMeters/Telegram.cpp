@@ -524,7 +524,8 @@ void Telegram::print()
 
 void Telegram::printDLL()
 {
-    if (about.type == FrameType::WMBUS)
+    #ifdef DEBUG_ENABLED
+    if ( about.type == FrameType::WMBUS)
     {
         string possible_drivers = autoDetectPossibleDrivers();
 
@@ -542,41 +543,38 @@ void Telegram::printDLL()
             about.device.c_str(),
             about.rssi_dbm);
     }
-
-    if (about.type == FrameType::MBUS)
-    {
-        verbose("(telegram) DLL L=%02x C=%02x (%s) A=%02x\n",
-            dll_len,
-            dll_c, cType(dll_c).c_str(),
-            mbus_primary_address);
-    }
-
+    #endif
 }
 
 void Telegram::printELL()
 {
-    if (ell_ci == 0) return;
+     #ifdef DEBUG_ENABLED
+     {
+        if (ell_ci == 0) return;
 
-    string ell_cc_info = ccType(ell_cc);
-    verbose("(telegram) ELL CI=%02x CC=%02x (%s) ACC=%02x",
-        ell_ci, ell_cc, ell_cc_info.c_str(), ell_acc);
+        string ell_cc_info = ccType(ell_cc);
+        verbose("(telegram) ELL CI=%02x CC=%02x (%s) ACC=%02x",
+            ell_ci, ell_cc, ell_cc_info.c_str(), ell_acc);
 
-    if (ell_ci == 0x8d || ell_ci == 0x8f)
-    {
-        string ell_sn_info = toStringFromELLSN(ell_sn);
+        if (ell_ci == 0x8d || ell_ci == 0x8f)
+        {
+            string ell_sn_info = toStringFromELLSN(ell_sn);
 
-        verbose(" SN=%02x%02x%02x%02x (%s) CRC=%02x%02x",
-            ell_sn_b[0], ell_sn_b[1], ell_sn_b[2], ell_sn_b[3], ell_sn_info.c_str(),
-            ell_pl_crc_b[0], ell_pl_crc_b[1]);
+            verbose(" SN=%02x%02x%02x%02x (%s) CRC=%02x%02x",
+                ell_sn_b[0], ell_sn_b[1], ell_sn_b[2], ell_sn_b[3], ell_sn_info.c_str(),
+                ell_pl_crc_b[0], ell_pl_crc_b[1]);
+        }
+        if (ell_ci == 0x8e || ell_ci == 0x8f)
+        {
+            string man = manufacturerFlag(ell_mfct);
+            verbose(" M=%02x%02x (%s) ID=%02x%02x%02x%02x",
+                ell_mfct_b[0], ell_mfct_b[1], man.c_str(),
+                ell_id_b[0], ell_id_b[1], ell_id_b[2], ell_id_b[3]);
+        }
+        verbose("\n");
+     
     }
-    if (ell_ci == 0x8e || ell_ci == 0x8f)
-    {
-        string man = manufacturerFlag(ell_mfct);
-        verbose(" M=%02x%02x (%s) ID=%02x%02x%02x%02x",
-            ell_mfct_b[0], ell_mfct_b[1], man.c_str(),
-            ell_id_b[0], ell_id_b[1], ell_id_b[2], ell_id_b[3]);
-    }
-    verbose("\n");
+    #endif
 }
 
 void Telegram::printNWL()
@@ -628,7 +626,7 @@ string toStringFromTPLConfig(int cfg)
 
 void Telegram::printTPL()
 {
-    /*
+    #ifdef DEBUG_ENABLED
     if (tpl_ci == 0) return;
 
     verbose("(telegram) TPL CI=%02x", tpl_ci);
@@ -650,7 +648,7 @@ void Telegram::printTPL()
     }
 
     verbose("\n");
-    */
+    #endif
 }
 
 string manufacturer(int m_field) {
@@ -900,6 +898,7 @@ else{
 
 string ciType(int ci_field)
 {
+     #ifdef DEBUG_ENABLED
     if (ci_field >= 0xA0 && ci_field <= 0xB7) {
         return "Mfct specific";
     }
@@ -1005,6 +1004,7 @@ string ciType(int ci_field)
     case 0xC4: return "Security info transfer from device (short tplh)";
     case 0xC5: return "Security info transfer from device (long tplh)";
     }
+    #endif
     return "?";
 }
 
@@ -1028,7 +1028,6 @@ void Telegram::addExplanationAndIncrementPos(vector<uchar>::iterator& pos, int l
 
 void Telegram::setExplanation(vector<uchar>::iterator& pos, int len, KindOfData k, Understanding u, const char* fmt, ...)
 {
-debug("set explanation start");
     char buf[1024];
     buf[1023] = 0;
 
@@ -1039,7 +1038,6 @@ debug("set explanation start");
 
     Explanation e(distance(frame.begin(), pos), len, buf, k, u);
     explanations.push_back(e);
-debug("set explanation end");
 }
 
 void Telegram::addMoreExplanation(int pos, string json)
@@ -1049,7 +1047,7 @@ void Telegram::addMoreExplanation(int pos, string json)
 
 void Telegram::addMoreExplanation(int pos, const char* fmt, ...)
 {
-/*
+ #ifdef DEBUG_ENABLED
     char buf[1024];
 
     buf[1023] = 0;
@@ -1074,12 +1072,12 @@ void Telegram::addMoreExplanation(int pos, const char* fmt, ...)
     if (!found) {
         debug("(wmbus) warning: cannot find offset %d to add more explanation \"%s\"\n", pos, buf);
     }
-*/
+#endif
 }
 
 void Telegram::addSpecialExplanation(int offset, int len, KindOfData k, Understanding u, const char* fmt, ...)
 {
-/*
+ #ifdef DEBUG_ENABLED
     char buf[1024];
     buf[1023] = 0;
 
@@ -1089,7 +1087,7 @@ void Telegram::addSpecialExplanation(int offset, int len, KindOfData k, Understa
     va_end(args);
 
     explanations.push_back({ offset, len, buf, k, u });
-*/
+#endif
 }
 
 bool expectedMore(int line)
@@ -2199,8 +2197,6 @@ bool Telegram::parseHeader(vector<uchar>& input_frame)
     switch (about.type)
     {
     case FrameType::WMBUS: return parseWMBUSHeader(input_frame);
-    case FrameType::MBUS: return parseMBUSHeader(input_frame);
-    case FrameType::HAN: return parseHANHeader(input_frame);
     }
     assert(0);
     return false;
@@ -2329,71 +2325,6 @@ bool Telegram::parseWMBUS(vector<uchar>& input_frame, MeterKeys* mk, bool warn)
     return true;
 }
 
-bool Telegram::parseMBUSHeader(vector<uchar>& input_frame)
-{
-    assert(about.type == FrameType::MBUS);
-
-    bool ok;
-    // Parsing the header is used to extract the ids, so that we can
-    // match the telegram towards any known ids and thus keys.
-    // No need to warn.
-    parser_warns_ = false;
-    decryption_failed = false;
-    explanations.clear();
-    suffix_size = 0;
-    frame = input_frame;
-    vector<uchar>::iterator pos = frame.begin();
-    // Parsed accumulates parsed bytes.
-    parsed.clear();
-
-    ok = parseMBusDLLandTPL(pos);
-    if (!ok) return false;
-
-    return true;
-}
-
-bool Telegram::parseMBUS(vector<uchar>& input_frame, MeterKeys* mk, bool warn)
-{
-    assert(about.type == FrameType::MBUS);
-
-    parser_warns_ = warn;
-    decryption_failed = false;
-    explanations.clear();
-    suffix_size = 0;
-    meter_keys = mk;
-    assert(meter_keys != NULL);
-    bool ok;
-    frame = input_frame;
-    vector<uchar>::iterator pos = frame.begin();
-    // Parsed accumulates parsed bytes.
-    parsed.clear();
-
-    //     ┌──────────────────────────────────────────────┐
-    //     │                                              │
-    //     │ Parse DLL Data Link Layer for Wireless MBUS. │
-    //     │                                              │
-    //     └──────────────────────────────────────────────┘
-
-    ok = parseMBusDLLandTPL(pos);
-    if (!ok) return false;
-
-    return true;
-}
-
-bool Telegram::parseHANHeader(vector<uchar>& input_frame)
-{
-    assert(about.type == FrameType::HAN);
-
-    return false;
-}
-
-bool Telegram::parseHAN(vector<uchar>& input_frame, MeterKeys* mk, bool warn)
-{
-    assert(about.type == FrameType::HAN);
-
-    return false;
-}
-
 void Telegram::explainParse(string intro, int from)
 {
     for (auto& p : explanations)
@@ -2488,51 +2419,6 @@ string renderAnalysisAsText(vector<Explanation>& explanations, OutputFormat of)
 string renderAnalysisAsJson(vector<Explanation>& explanations)
 {
     return "{ \"TODO\": true }\n";
-}
-
-string Telegram::analyzeParse(OutputFormat format, int* content_length, int* understood_content_length)
-{
-    int u = 0;
-    int l = 0;
-
-    sort(explanations.begin(), explanations.end(),
-        [](const Explanation& a, const Explanation& b) -> bool { return a.pos < b.pos; });
-
-    // Calculate how much is understood.
-    for (auto& e : explanations)
-    {
-        if (e.kind == KindOfData::CONTENT)
-        {
-            l += e.len;
-            if (e.understanding == Understanding::PARTIAL ||
-                e.understanding == Understanding::FULL)
-            {
-                // Its content and we have at least some understanding.
-                u += e.len;
-            }
-        }
-    }
-    *content_length = l;
-    *understood_content_length = u;
-
-    switch (format)
-    {
-    case OutputFormat::PLAIN:
-    case OutputFormat::HTML:
-    case OutputFormat::TERMINAL:
-    {
-        return renderAnalysisAsText(explanations, format);
-        break;
-    }
-    case OutputFormat::JSON:
-        return renderAnalysisAsJson(explanations);
-        break;
-    case OutputFormat::NONE:
-        // Do nothing
-        return "";
-        break;
-    }
-    return "ERROR";
 }
 
 void detectMeterDrivers(int manufacturer, int media, int version, std::vector<std::string>* drivers);

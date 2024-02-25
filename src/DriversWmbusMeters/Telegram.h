@@ -182,14 +182,8 @@ public:
     bool parseHeader(std::vector<uchar>& input_frame);
     bool parse(std::vector<uchar>& input_frame, MeterKeys* mk, bool warn);
 
-    bool parseMBUSHeader(std::vector<uchar>& input_frame);
-    bool parseMBUS(std::vector<uchar>& input_frame, MeterKeys* mk, bool warn);
-
     bool parseWMBUSHeader(std::vector<uchar>& input_frame);
     bool parseWMBUS(std::vector<uchar>& input_frame, MeterKeys* mk, bool warn);
-
-    bool parseHANHeader(std::vector<uchar>& input_frame);
-    bool parseHAN(std::vector<uchar>& input_frame, MeterKeys* mk, bool warn);
 
     void addId(const std::vector<uchar>::iterator& pos);
 
@@ -206,7 +200,6 @@ public:
     // Add an explanation of data inside manufacturer specific data.
     void addSpecialExplanation(int offset, int len, KindOfData k, Understanding u, const char* fmt, ...);
     void explainParse(std::string intro, int from);
-    std::string analyzeParse(OutputFormat o, int* content_length, int* understood_content_length);
 
     bool parserWarns() { return parser_warns_; }
     bool isSimulated() { return is_simulated_; }
